@@ -10,5 +10,5 @@
 </script>
 
 {#each cats as cat}
-	<Image url={cat} width={500} style="width: 500px;" blur={'14px'} transition="0.5s" alt="a cat!" />
+	<Image url={cat} width={500} style="width: 500px;" blur={'7px'} transition="0.5s" alt="a cat!" />
 {/each}
