@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-
 	/**
 	 * url of the image
 	 */
@@ -24,39 +22,53 @@
 	export let style = '';
 
 	/**
-	 * used to blur the placeholder image while the orginal loads,
-	 * can take values that can be added to `filter: blur(<blur>);`
-	 * @example 14px
-	 * @default ""
-	 */
-	export let blur = '';
-
-	/**
-	 * used to animate between the placeholder and the original image
-	 * can take values that can be added to `transform: all <transation>;`
-	 * @example 1s
-	 * @default ""
-	 */
-	export let transition = '';
-
-	/**
 	 * image alt
 	 */
 	export let alt: string;
 
-	let src = `/api/_image/webp?url=${encodeURIComponent(url)}&w=${placeholderWidth}`;
+	export let sources: {
+		imageWidth: number;
+		viewPortWidth: number;
+	}[] = [];
 
-	let transitionStyle = `transition: all ${transition};`;
-	let blurStlye = `filter: blur(${blur});`;
+	function generateApiUrl(width: number, format: string, placeholder = false) {
+		let res = `/api/_image/${format}?url=${encodeURIComponent(url)}&w=${width}`;
+		if (placeholder) {
+			res += '&placeholder=true';
+		}
 
-	onMount(() => {
-		const fullImage = new Image();
-		fullImage.src = `/api/_image/webp?url=${encodeURIComponent(url)}&w=${width}`;
-		fullImage.onload = function () {
-			src = fullImage.src;
-			blurStlye = '';
-		};
-	});
+		return res;
+	}
 </script>
 
-<img {src} style={`${style}${transitionStyle}${blurStlye}`} {alt} />
+<picture style={`background-image: url(${generateApiUrl(placeholderWidth, 'jpeg', true)});`}>
+	{#each sources as source}
+		<source
+			srcset={generateApiUrl(source.imageWidth, 'webp')}
+			type="image/webp"
+			media={`(max-width: ${source.viewPortWidth}px)`}
+		/>
+		<source
+			srcset={generateApiUrl(source.imageWidth, 'jpeg')}
+			type="image/jpeg"
+			media={`(max-width: ${source.viewPortWidth}px)`}
+		/>
+	{/each}
+	<source srcset={generateApiUrl(width, 'webp')} type="image/webp" />
+	<source srcset={generateApiUrl(width, 'jpeg')} type="image/jpeg" />
+
+	<img src={generateApiUrl(width, 'jpeg')} style={`${style}`} {alt} loading="lazy" />
+</picture>
+
+<style>
+	img {
+		color: transparent;
+	}
+
+	picture {
+		width: 100%;
+		height: 100%;
+		background-repeat: no-repeat;
+		background-size: cover;
+	}
+</style>

@@ -15,10 +15,27 @@ export const GET = (async ({ params, url, fetch, setHeaders }) => {
 	if (!widthNumber) {
 		throw error(400, 'w query param must be a number');
 	}
+	const isPlaceholder = url.searchParams.get('placeholder') == 'true';
 
 	const img = await fetch(imageUrl);
 	const imgBuffer = await img.arrayBuffer();
-	const out = await sharp(imgBuffer).rotate().resize(widthNumber).webp({ quality: 70 }).toBuffer();
+
+	let base = sharp(imgBuffer).resize(widthNumber);
+	if (isPlaceholder) {
+		base = base.blur();
+	}
+
+	let out: any;
+	switch (params.ext) {
+		case 'webp':
+			out = await base.webp({ quality: 70 }).toBuffer();
+			break;
+		case 'jpeg':
+			out = await base.jpeg({ quality: 70 }).toBuffer();
+			break;
+		default:
+			throw error(400, 'invalid format');
+	}
 
 	setHeaders({
 		'Cache-Control': 'max-age=31536000, s-maxage=31536000'
